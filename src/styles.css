@@ -239,3 +239,32 @@ a { color: inherit; }
   background: #efe7d5; border-left: 4px solid var(--spruce); padding: 14px 18px;
 }
 .center { text-align: center; }
+
+/* ---------- crew verification ---------- */
+.vtick { color: var(--spruce); font-family: var(--mono); font-weight: 700; }
+.handle .vtick, .h2 .vtick { font-family: var(--display); font-weight: normal; }
+.disputed { color: var(--flag); font-family: var(--mono); }
+.slip-row.is-disputed { background: rgba(232, 51, 109, 0.07); }
+.sorts .spacer { flex: 1; }
+.crew-row { grid-template-columns: 1fr auto; }
+.slip-head.roster, .slip-row.roster { grid-template-columns: 1fr 96px 120px 84px; }
+.slip-row.check { cursor: pointer; }
+.slip-row.check input, .check-all input { accent-color: var(--spruce); margin: 0 6px 0 0; vertical-align: -2px; }
+.check-all { display: block; font-family: var(--mono); font-size: 12px; margin: 0 0 8px; cursor: pointer; }
+.req {
+  display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap;
+  border-top: 1px dashed var(--rule); padding: 14px 0;
+}
+.req .btn { font-size: 15px; padding: 9px 16px; }
+.inline-add { display: flex; gap: 8px; align-items: flex-end; }
+.confirm-x { display: inline-flex; gap: 2px; }
+.x.keep { color: rgba(31, 27, 21, 0.6); }
+@media (max-width: 620px) {
+  .slip-head.roster, .slip-row.roster { grid-template-columns: 1fr 70px 70px; }
+  .slip-head.roster span:nth-child(2), .slip-row.roster > span:nth-child(2) { display: none; }
+  .crew-row .score { grid-column: auto; text-align: right; }
+  .slip-row.roster > .note:first-child { display: block; }
+}
+.slip-row.check { grid-template-columns: 124px 1fr 108px 84px; }
+@media (max-width: 620px) { .slip-row.check { grid-template-columns: 104px 1fr 62px; } }
+@media (max-width: 620px) { .slip-head.roster span:nth-child(3) { display: block; } }

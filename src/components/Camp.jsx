@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { saveProfile, addDay, removeDay, deleteProfile, fetchDays } from "../lib/api";
-import { TERRAIN, nf, gnarPreview } from "../lib/gnar";
+import { saveProfile, addDay, removeDay, deleteProfile, fetchDays, fetchMyCrews, fetchCrewNames } from "../lib/api";
+import { TERRAIN, nf, gnarPreview, localDate } from "../lib/gnar";
+import { Mark } from "./Sheet";
 import SignIn from "./SignIn";
 
 const BLANK = { handle: "", base: "", country: "", crew: "", seasons: "", priorTrees: "", tagline: "" };
@@ -16,13 +17,16 @@ export default function Camp({ session, mine, reload, say }) {
 
   const [days, setDays] = useState([]);
   const [day, setDay] = useState({
-    date: new Date().toISOString().slice(0, 10),
+    date: localDate(),
     trees: "",
     terrain: "block",
     block: "",
     notes: "",
   });
   const [dayErr, setDayErr] = useState("");
+  const [crews, setCrews] = useState({ staff: [], members: [] });
+  const [crewNames, setCrewNames] = useState({});
+  const [confirmDay, setConfirmDay] = useState(null);
 
   useEffect(() => {
     if (!mine) return;
@@ -37,6 +41,17 @@ export default function Camp({ session, mine, reload, say }) {
     });
     fetchDays(mine.id).then(setDays).catch(() => setDays([]));
   }, [mine]);
+
+  const userId = session?.user?.id;
+  useEffect(() => {
+    if (!userId) return;
+    fetchMyCrews(userId, mine?.id).then(setCrews).catch(() => {});
+  }, [userId, mine?.id]);
+
+  useEffect(() => {
+    const ids = [...new Set(days.map((d) => d.verdict_crew).filter(Boolean))];
+    fetchCrewNames(ids).then(setCrewNames).catch(() => {});
+  }, [days]);
 
   if (!session) {
     return (
@@ -108,6 +123,7 @@ export default function Camp({ session, mine, reload, say }) {
   }
 
   async function dropDay(id) {
+    setConfirmDay(null);
     setBusy(true);
     try {
       await removeDay(id);
@@ -171,6 +187,9 @@ export default function Camp({ session, mine, reload, say }) {
           <div className="field">
             <label htmlFor="crew">Crew or company</label>
             <input id="crew" value={form.crew} onChange={set("crew")} placeholder="Freelance" maxLength={40} />
+            <span className="hint">
+              Shown until you join a registered crew. <Link to="/crews">Join one</Link> to get your days verified.
+            </span>
           </div>
           <div className="field">
             <label htmlFor="seasons">Seasons planted</label>
@@ -202,6 +221,8 @@ export default function Camp({ session, mine, reload, say }) {
         </div>
       </section>
 
+      {mine && <MyCrews crews={crews} />}
+
       {mine && (
         <section className="panel">
           <p className="eyebrow">Step two · one entry per date</p>
@@ -210,7 +231,7 @@ export default function Camp({ session, mine, reload, say }) {
           <div className="grid">
             <div className="field">
               <label htmlFor="date">Date</label>
-              <input id="date" type="date" value={day.date} onChange={setD("date")} max={new Date().toISOString().slice(0, 10)} />
+              <input id="date" type="date" value={day.date} onChange={setD("date")} min="1990-01-01" max={localDate()} />
             </div>
             <div className="field">
               <label htmlFor="trees">Trees planted</label>
@@ -256,15 +277,27 @@ export default function Camp({ session, mine, reload, say }) {
                   <span style={{ textAlign: "right" }}>Trees</span>
                 </div>
                 {days.map((d) => (
-                  <div className="slip-row" key={d.id}>
-                    <span>{d.date}</span>
-                    <span className="note">{d.block || "—"}</span>
+                  <div className={`slip-row${d.verdict === "disputed" ? " is-disputed" : ""}`} key={d.id}>
+                    <span>
+                      {d.date}
+                      <Mark d={d} crew={crewNames[d.verdict_crew]} />
+                    </span>
+                    <span className="note">
+                      {d.verdict === "disputed" ? <span className="disputed">Disputed: {d.verdict_note}</span> : d.block || "—"}
+                    </span>
                     <span><i className="terrain">{TERRAIN[d.terrain]?.label}</i></span>
                     <b>
                       {nf(d.trees)}{" "}
-                      <button className="x" onClick={() => dropDay(d.id)} aria-label={`Remove ${d.date}`} disabled={busy}>
-                        ✕
-                      </button>
+                      {confirmDay === d.id ? (
+                        <span className="confirm-x">
+                          <button className="x" onClick={() => dropDay(d.id)} disabled={busy}>Remove</button>
+                          <button className="x keep" onClick={() => setConfirmDay(null)}>Keep</button>
+                        </span>
+                      ) : (
+                        <button className="x" onClick={() => setConfirmDay(d.id)} aria-label={`Remove ${d.date}`} disabled={busy}>
+                          ✕
+                        </button>
+                      )}
                     </b>
                   </div>
                 ))}
@@ -292,5 +325,40 @@ export default function Camp({ session, mine, reload, say }) {
         </section>
       )}
     </>
+  );
+}
+
+function MyCrews({ crews }) {
+  const { staff, members } = crews;
+  return (
+    <section className="panel">
+      <p className="eyebrow">Crew verification</p>
+      <h2 className="h2">My crews</h2>
+      {members.length === 0 && staff.length === 0 ? (
+        <p className="p" style={{ margin: 0 }}>
+          You're not on a registered crew yet. <Link to="/crews">Find your crew</Link> and ask to join. Once
+          they accept, your foreman or checker can verify your days against the tally sheet.
+        </p>
+      ) : (
+        <div className="slip">
+          {members.map((m) => (
+            <div className="slip-row roster" key={m.id}>
+              <span className="note" style={{ color: "inherit" }}><Link to={`/c/${m.crews.slug}`}>{m.crews.name}</Link></span>
+              <span />
+              <span><i className="terrain">{m.status === "active" ? "member" : m.status === "pending" ? "requested" : "declined"}</i></span>
+              <b />
+            </div>
+          ))}
+          {staff.map((s) => (
+            <div className="slip-row roster" key={s.crews.id + s.role}>
+              <span className="note" style={{ color: "inherit" }}><Link to={`/c/${s.crews.slug}`}>{s.crews.name}</Link></span>
+              <span className="note">{s.crews.status === "approved" ? "" : s.crews.status === "pending" ? "awaiting review" : "not approved"}</span>
+              <span><i className="terrain">{s.role}</i></span>
+              <b />
+            </div>
+          ))}
+        </div>
+      )}
+    </section>
   );
 }

@@ -1,12 +1,13 @@
 import React, { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
-import { fetchPlanter, fetchDays } from "../lib/api";
+import { fetchPlanter, fetchDays, fetchCrewNames } from "../lib/api";
 import { TERRAIN, SEASON, nf, patches } from "../lib/gnar";
 
 export default function Sheet({ mine }) {
   const { handle } = useParams();
   const [row, setRow] = useState(null);
   const [days, setDays] = useState([]);
+  const [crewNames, setCrewNames] = useState({});
   const [state, setState] = useState("loading");
 
   useEffect(() => {
@@ -24,6 +25,9 @@ export default function Sheet({ mine }) {
         const d = await fetchDays(planter.id);
         if (!live) return;
         setDays(d);
+        const ids = [...new Set(d.map((x) => x.verdict_crew).filter(Boolean))];
+        setCrewNames(await fetchCrewNames(ids).catch(() => ({})));
+        if (!live) return;
         setState("done");
         document.title = `${planter.handle} — Highball`;
       } catch {
@@ -65,9 +69,18 @@ export default function Sheet({ mine }) {
           {row.country ? ` · ${row.country}` : ""} · {row.seasons} season{row.seasons === 1 ? "" : "s"}
           {isMe ? " · your profile" : ""}
         </p>
-        <h2 className="h2">{row.handle}</h2>
+        <h2 className="h2">
+          {row.handle}
+          {row.crew_verified && <span className="vtick"> ✓</span>}
+        </h2>
         {row.tagline && <p className="p" style={{ fontStyle: "italic" }}>“{row.tagline}”</p>}
-        {row.crew && <p className="meta">Crew · {row.crew}</p>}
+        {row.crew && (
+          <p className="meta">
+            Crew ·{" "}
+            {row.crew_slug ? <Link to={`/c/${row.crew_slug}`}>{row.crew}</Link> : row.crew}
+            {!row.crew_slug && " · not a registered crew"}
+          </p>
+        )}
 
         <div className="stats">
           <div className="stat"><b>{nf(row.gnar)}</b><span>Gnar index</span></div>
@@ -76,6 +89,10 @@ export default function Sheet({ mine }) {
           <div className="stat"><b>{nf(row.best_day)}</b><span>Best day</span></div>
           <div className="stat"><b>{nf(row.avg_day)}</b><span>Day average</span></div>
           <div className="stat"><b>{Number(row.ground_factor).toFixed(2)}</b><span>Ground factor</span></div>
+          <div className="stat">
+            <b>{row.verified_pct}%</b>
+            <span>Crew verified{row.disputed_days > 0 ? ` · ${row.disputed_days} disputed` : ""}</span>
+          </div>
         </div>
 
         {pl.length > 0 && (
@@ -111,11 +128,20 @@ export default function Sheet({ mine }) {
               <span style={{ textAlign: "right" }}>Trees</span>
             </div>
             {days.map((d) => (
-              <div className="slip-row" key={d.id}>
-                <span>{d.date}</span>
+              <div className={`slip-row${d.verdict === "disputed" ? " is-disputed" : ""}`} key={d.id}>
+                <span>
+                  {d.date}
+                  <Mark d={d} crew={crewNames[d.verdict_crew]} />
+                </span>
                 <span className="note">
-                  {d.block || "—"}
-                  {d.notes ? ` · ${d.notes}` : ""}
+                  {d.verdict === "disputed" ? (
+                    <span className="disputed">Disputed: {d.verdict_note}</span>
+                  ) : (
+                    <>
+                      {d.block || "—"}
+                      {d.notes ? ` · ${d.notes}` : ""}
+                    </>
+                  )}
                 </span>
                 <span><i className="terrain">{TERRAIN[d.terrain]?.label || d.terrain}</i></span>
                 <b>{nf(d.trees)}</b>
@@ -130,5 +156,16 @@ export default function Sheet({ mine }) {
         )}
       </section>
     </>
+  );
+}
+
+// A verified or disputed stamp on a day, with the crew that gave it.
+export function Mark({ d, crew }) {
+  if (!d.verdict) return null;
+  const who = crew?.name || "a crew";
+  return d.verdict === "verified" ? (
+    <span className="vtick" title={`Verified by ${who}`}> ✓</span>
+  ) : (
+    <span className="disputed" title={`Disputed by ${who}: ${d.verdict_note || ""}`}> ⚑</span>
   );
 }

@@ -17,10 +17,24 @@ Budget about an hour. Two accounts needed, both free to start: Supabase and Verc
 1. Sign up at [supabase.com](https://supabase.com) and create a project. Save the database
    password somewhere — you won't need it for this app, but you'll want it later.
 2. Open **SQL Editor → New query**.
-3. Paste the whole contents of `supabase/migrations/0001_init.sql` and hit **Run**.
+3. Run the three files in `supabase/migrations/` **in order**: paste each one's contents and hit
+   **Run**, then the next.
+   - `0001_init.sql`: the `planters` and `days` tables, the `board` view that computes Gnar, and
+     the row-level security policies that stop anyone editing a profile that isn't theirs.
+   - `0002_hardening.sql`: tighter limits (text lengths, clean camp names, no dates before 1990).
+   - `0003_crews.sql`: crews and crew verification.
 
-That creates the `planters` and `days` tables, the `board` view that computes Gnar, and the
-row-level security policies that stop anyone editing a profile that isn't theirs.
+   Already ran `0001` on a live project? Just run `0002` and `0003`. Nothing existing is lost.
+
+4. Make yourself an admin, so you can approve crews. Sign in to the app once first, then run
+   this in the SQL editor with your sign-in email:
+
+   ```sql
+   insert into site_admins (user_id)
+   select id from auth.users where email = 'you@example.com';
+   ```
+
+   An **Admin** tab appears in the nav for you.
 
 ### 2. Turn on email sign-in
 
@@ -92,10 +106,48 @@ src/
     Camp.jsx          profile form, day logging, delete
     SignIn.jsx        magic link
     Scoring.jsx       the Gnar formula, in the open
+    Crews.jsx         list of approved crews
+    NewCrew.jsx       register a crew
+    Crew.jsx          crew page: roster, join requests, day checking, checkers
+    Admin.jsx         approve or reject new crews
     Setup.jsx         shown when env vars are missing
 supabase/migrations/
   0001_init.sql       schema, Gnar view, RLS policies
+  0002_hardening.sql  tighter limits on what can be written
+  0003_crews.sql      crews, membership, verification marks
+supabase/tests/
+  rules_test.sql      acts as different users and checks every rule holds
 ```
+
+## Crew verification
+
+1. **Anyone signed in can register a crew.** It stays hidden until a Highball admin approves it on
+   the Admin page. That approval is the whole trust model, so only approve outfits you're
+   satisfied are real.
+2. **Planters ask to join** from the crew's page (`/c/<crew-link>`). The owner or a checker accepts.
+3. **Owners and checkers check the tally.** Every unchecked day from their members shows up on the
+   crew page. They tick days and mark them **verified**, or **disputed** with a note the public
+   can see.
+4. **The board shows it.** A planter is *crew verified* (✓) when at least 80% of their logged trees
+   are verified and none of their days are disputed. The board has a "Crew verified only" switch.
+
+What the database guarantees, whatever someone does with the API:
+
+- planters can't mark their own days; the verdict columns aren't writable by them at all
+- changing the count, date or ground on a checked day wipes its mark
+- a crew can only judge days of its own active members, never the checker's own days, and never
+  overwrite another crew's mark
+- pending or rejected crews can't verify anything; renaming an approved crew sends it back to review
+- only the owner can add or remove checkers; only admins can approve crews
+
+Gnar itself is unchanged and the same for everyone. Verification sits next to it, not inside it.
+
+## Testing the database rules
+
+`npm run test:db` loads every migration into a scratch database and runs 41 checks as different
+users (anonymous, planter, crew owner, stranger, admin). It needs a local Postgres you can reach
+as a superuser (set `PGHOST`, `PGPORT`, `PGUSER` as usual). It uses a small stand-in for
+Supabase's auth (`supabase/tests/supabase_stub.sql`); never run that file on your real project.
 
 **Gnar is computed in Postgres**, in the `board` view. Sorting happens in the database, so the
 browser never downloads every planter's history to rank them. `src/lib/gnar.js` mirrors the
@@ -114,12 +166,17 @@ multiplier, change it in both places.
 
 ## What to think about before you promote it
 
-**Self-reported numbers.** Nothing here verifies a tally. Once there's status attached to the top
-of a board, some numbers get generous. The current design leans on transparency — every logged
-day stays visible on the profile, so an invented 5,000 day sits next to a season of 2,200s and
-looks like what it is. If that stops being enough, the usual next steps are crew verification (a
-company vouches for its planters), a photo of the day sheet above some threshold, or a
-flag-and-review queue.
+**Self-reported numbers.** Crew verification covers planters whose crew is on Highball. Everyone
+else is still on the honour system, and the default board still ranks everyone. If inflation
+becomes a problem, options are: make "Crew verified only" the default view, count only verified
+trees toward Gnar, or add a flag-and-review queue for freelancers.
+
+**Sign-up spam.** Anyone with an email can make a profile. Before launch, turn on CAPTCHA under
+**Authentication → Attack Protection** in Supabase (hCaptcha or Cloudflare Turnstile).
+
+**Deleting a profile keeps the sign-in.** "Pull my profile off the board" removes the profile and
+every day, but the email stays in Supabase's auth table. If someone asks for their account to be
+fully erased, delete them under **Authentication → Users**.
 
 **Season boundaries.** "This season" currently means the calendar year, which suits the northern
 hemisphere. Planters in Chile, New Zealand or southern Africa plant across a year boundary. If

@@ -20,6 +20,26 @@ export const SEASON = new Date().getFullYear();
 
 export const nf = (n) => Math.round(Number(n) || 0).toLocaleString();
 
+// Today's date where the planter is, as YYYY-MM-DD. toISOString() gives the
+// UTC date, which in the Americas flips to tomorrow every afternoon — exactly
+// when planters sit down to log the day.
+export function localDate(d = new Date()) {
+  const pad = (n) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+}
+
+// Turn a crew name into a URL slug: "Nechako Planting Ltd." -> "nechako-planting-ltd"
+export function slugify(s) {
+  return String(s)
+    .normalize("NFKD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 40)
+    .replace(/-+$/, "");
+}
+
 // Preview of what a day is worth, so the form can show it before saving.
 export function gnarPreview(row, trees, terrain) {
   if (!row || !trees) return 0;
@@ -39,6 +59,7 @@ export function gnarPreview(row, trees, terrain) {
 
 export function patches(row) {
   const out = [];
+  if (row.crew_verified) out.push(["Crew verified", "gold"]);
   const best = Number(row.best_day);
   const career = Number(row.career_trees);
   const seasons = Number(row.seasons);

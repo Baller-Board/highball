@@ -5,6 +5,8 @@ import { SORTS, nf } from "../lib/gnar";
 
 export default function Board({ mine }) {
   const [sort, setSort] = useState("gnar");
+  const [verifiedOnly, setVerifiedOnly] = useState(false);
+  const [attempt, setAttempt] = useState(0);
   const [rows, setRows] = useState([]);
   const [state, setState] = useState("loading");
   const [err, setErr] = useState("");
@@ -12,7 +14,7 @@ export default function Board({ mine }) {
   useEffect(() => {
     let live = true;
     setState("loading");
-    fetchBoard(sort)
+    fetchBoard(sort, { verifiedOnly })
       .then((data) => {
         if (!live) return;
         setRows(data);
@@ -26,7 +28,7 @@ export default function Board({ mine }) {
     return () => {
       live = false;
     };
-  }, [sort]);
+  }, [sort, verifiedOnly, attempt]);
 
   const active = SORTS.find((s) => s.key === sort);
   const top = rows.length ? Number(rows[0][sort]) || 1 : 1;
@@ -39,6 +41,15 @@ export default function Board({ mine }) {
             {s.label}
           </button>
         ))}
+        <span className="spacer" />
+        <button
+          className={verifiedOnly ? "on" : ""}
+          onClick={() => setVerifiedOnly((v) => !v)}
+          aria-pressed={verifiedOnly}
+          title="Only planters whose logged days are mostly verified by their crew"
+        >
+          ✓ Crew verified only
+        </button>
       </div>
 
       {state === "loading" && <p className="count">Reading the tally sheets…</p>}
@@ -48,11 +59,22 @@ export default function Board({ mine }) {
           <p className="eyebrow">Couldn't load the board</p>
           <h2 className="h2">The board didn't answer</h2>
           <p className="p" style={{ margin: "0 auto 18px" }}>{err}</p>
-          <button className="btn ghost" onClick={() => setSort(sort)}>Try again</button>
+          <button className="btn ghost" onClick={() => setAttempt((a) => a + 1)}>Try again</button>
         </div>
       )}
 
-      {state === "done" && rows.length === 0 && (
+      {state === "done" && rows.length === 0 && verifiedOnly && (
+        <div className="empty">
+          <p className="eyebrow">No verified planters yet</p>
+          <h2 className="h2">Nobody's been checked yet</h2>
+          <p className="p" style={{ margin: "0 auto 20px" }}>
+            Planters get the ✓ once their crew has verified most of their logged days.
+          </p>
+          <Link className="btn" to="/crews">See the crews</Link>
+        </div>
+      )}
+
+      {state === "done" && rows.length === 0 && !verifiedOnly && (
         <div className="empty">
           <p className="eyebrow">Nothing chalked up yet</p>
           <h2 className="h2">Be the first number on the board</h2>
@@ -66,7 +88,8 @@ export default function Board({ mine }) {
       {state === "done" && rows.length > 0 && (
         <>
           <p className="count">
-            {rows.length} planter{rows.length === 1 ? "" : "s"} on the board · sorted by {active.label.toLowerCase()}
+            {rows.length} {verifiedOnly ? "crew-verified " : ""}planter{rows.length === 1 ? "" : "s"} on the board · sorted by{" "}
+            {active.label.toLowerCase()}
           </p>
           {rows.map((r, i) => (
             <Link
@@ -79,7 +102,10 @@ export default function Board({ mine }) {
               {mine && mine.id === r.id && <span className="mine">You</span>}
               <span className="rank">{String(i + 1).padStart(2, "0")}</span>
               <span>
-                <h3 className="handle">{r.handle}</h3>
+                <h3 className="handle">
+                  {r.handle}
+                  {r.crew_verified && <span className="vtick" title={`Crew verified · ${r.verified_pct}% of logged trees`}> ✓</span>}
+                </h3>
                 <p className="meta">
                   {r.base}
                   {r.country ? ` · ${r.country}` : ""}

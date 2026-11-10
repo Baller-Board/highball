@@ -48,13 +48,26 @@ export default function Scoring() {
       </section>
 
       <section className="panel">
-        <p className="eyebrow">The honour system</p>
-        <h2 className="h2">Numbers are self-reported</h2>
+        <p className="eyebrow">Trust</p>
+        <h2 className="h2">Self-reported, crew-verified</h2>
         <p className="p">
-          There's no tally verification here — this runs on the same trust as a camp board. Post what
-          your day sheet actually said. Every day you log stays visible on your profile, so a padded
-          number sits in plain sight next to the rest of your season, and every planter reading the
-          board knows what a real 4,000 day looks like.
+          Planters log their own numbers. Every day stays visible on the profile, so a padded number
+          sits in plain sight next to the rest of the season, and anyone reading the board knows what a
+          real 4,000 day looks like.
+        </p>
+        <p className="p">
+          On top of that, crews can verify. Join your crew on Highball, and your foreman or checker can
+          hold your logged days up against the tally sheet and mark each one{" "}
+          <span className="vtick">✓ verified</span> or <span className="disputed">⚑ disputed</span>, with
+          a note saying why. You can't mark your own days, and changing the count, date or ground on a
+          checked day takes the mark off. Every crew is checked by Highball before it can verify anyone.
+        </p>
+        <p className="p">
+          A planter is <b>crew verified</b> when at least 80% of their logged trees carry a verified mark
+          and none of their days are disputed. Use the "Crew verified only" switch on the board to rank
+          only those planters. Career trees carried in from before joining can't be verified, and
+          neither help nor hurt that number. Gnar is worked out the same way for everyone, verified or
+          not.
         </p>
       </section>
     </>
