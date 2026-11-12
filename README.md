@@ -10,7 +10,7 @@ React + Vite on the front, Supabase (Postgres + auth) on the back. No server to 
 
 ## Getting it live
 
-Budget about an hour. Two accounts needed, both free to start: Supabase and Vercel.
+Budget about an hour. Three accounts needed, all free to start: GitHub, Supabase and Netlify.
 
 ### 1. Create the database
 
@@ -80,17 +80,30 @@ Open http://localhost:5173.
 First put the code on GitHub: **[docs/GITHUB_SETUP.md](docs/GITHUB_SETUP.md)** walks through it
 step by step. The project is already a git repository with its history, on branch `main`.
 
-Then at [vercel.com](https://vercel.com): **Add New → Project**, import the repo. Vercel detects
-Vite automatically. Before deploying, add the same two environment variables under
-**Environment Variables**. Deploy.
+Then host it on Netlify:
 
-`vercel.json` handles SPA routing so that `/p/ditchpig` loads properly on a hard refresh instead
-of 404ing.
+1. Sign up at [netlify.com](https://app.netlify.com/signup) with **GitHub**.
+2. **Add new site → Import an existing project → GitHub.** When GitHub asks for access, pick the
+   organisation that owns the repo and choose **Only select repositories** → the repo.
+3. Pick the repo. Netlify reads `netlify.toml`, so the build settings fill themselves in
+   (`npm run build`, publish `dist`). Leave them.
+4. Under **Environment variables** (or **Add environment variables** on the same screen) add
+   `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY`, the same values as `.env.local`.
+5. **Deploy.** You get an address like `random-name-123.netlify.app`. Rename it under
+   **Site configuration → Change site name**, e.g. `highball-board.netlify.app`.
+
+Every push to `main` deploys automatically after that.
+
+`netlify.toml` also sends every path to `index.html`, so `/p/ditchpig` loads properly on a hard
+refresh or a shared link instead of 404ing.
+
+If you add or change the environment variables later, redeploy (**Deploys → Trigger deploy**) —
+they're baked in at build time.
 
 ### 5. Point a domain at it
 
-Buy one anywhere (Namecheap, Cloudflare, Porkbun — roughly $15/year). In Vercel: **Settings →
-Domains → Add**, then follow the DNS instructions. Go back to Supabase and update **Site URL**
+Buy one anywhere (Namecheap, Cloudflare, Porkbun — roughly $15/year). In Netlify: **Domain management →
+Add a domain**, then follow the DNS instructions. Go back to Supabase and update **Site URL**
 and **Redirect URLs** to the real domain, or sign-in links will bounce people to localhost.
 
 ---
@@ -191,4 +204,4 @@ the cap.
 
 **Profile link previews.** Sharing `/p/ditchpig` to Instagram currently shows the generic site
 card, because this is a client-rendered SPA. Per-profile preview images need server rendering —
-Next.js, or a small Vercel edge function that serves meta tags to crawlers.
+Next.js, or a small Netlify edge function that serves meta tags to crawlers.

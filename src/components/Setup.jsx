@@ -24,7 +24,7 @@ export default function Setup() {
             VITE_SUPABASE_ANON_KEY=eyJhbGciOi...
           </div>
           <p className="hint" style={{ marginTop: 12 }}>
-            Locally these go in <code>.env.local</code>. On Vercel they go in Project Settings →
+            Locally these go in <code>.env.local</code>. On Netlify they go in Site configuration →
             Environment Variables, then redeploy. Full steps are in README.md.
           </p>
         </section>

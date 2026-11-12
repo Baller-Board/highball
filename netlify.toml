@@ -1,0 +1,32 @@
+# Netlify reads this on every deploy. Nothing to set in Netlify's
+# dashboard except the two Supabase environment variables.
+
+[build]
+  command = "npm run build"
+  publish = "dist"
+
+[build.environment]
+  NODE_VERSION = "22"
+
+# Single-page app: send every path (/p/ditchpig, /c/nechako-planting, ...)
+# to index.html so a refresh or a shared link doesn't 404. Real files like
+# /assets/*.js are served first, so they're unaffected.
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+
+# Basic browser protections.
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options = "DENY"
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+    Permissions-Policy = "camera=(), microphone=(), geolocation=()"
+
+# Built files have a content hash in their names, so they can be cached forever.
+[[headers]]
+  for = "/assets/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"

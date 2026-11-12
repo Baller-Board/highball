@@ -1,6 +1,6 @@
 # Putting Highball on GitHub
 
-GitHub holds the code. Vercel watches it, so every change you push goes live automatically about a
+GitHub holds the code. Netlify watches it, so every change you push goes live automatically about a
 minute later. You do this once.
 
 **Time:** about 10 minutes. **Cost:** free.
@@ -83,7 +83,7 @@ Refresh your repo page on GitHub. You should see:
 
 The green tick means the automatic checks passed:
 
-- **build:** the site compiles, the same way Vercel will build it
+- **build:** the site compiles, the same way Netlify will build it
 - **rules:** every database migration applies, and all 41 permission checks pass
 
 A **red X** means a check failed. Click it to see which one and why. A yellow dot means it's still
@@ -105,15 +105,15 @@ All under your repo's **Settings** tab. None are required to go live.
 
 - `.env.local`, which holds your Supabase keys for running locally. It's already in
   `.gitignore`, so git skips it.
-- The Supabase **secret** or **service_role** key. It must never be in the code or in Vercel. The
+- The Supabase **secret** or **service_role** key. It must never be in the code or in Netlify. The
   app only ever uses the publishable key, which is safe to be public.
 - Your database password.
 
-On Vercel, the two keys go in **Settings → Environment Variables**, not in the code.
+On Netlify, the two keys go in **Site configuration → Environment variables**, not in the code.
 
 ## Next
 
-Connect Vercel to the repo. Steps 2–4 of "Getting it live" in the [README](../README.md) cover it.
+Connect Netlify to the repo. Steps 2–4 of "Getting it live" in the [README](../README.md) cover it.
 
 ---
 
@@ -123,6 +123,6 @@ Connect Vercel to the repo. Steps 2–4 of "Getting it live" in the [README](../
 |---|---|
 | `.github/workflows/ci.yml` | Runs the build and the database rule checks on every push |
 | `.github/dependabot.yml` | Opens a monthly pull request with library updates |
-| `.nvmrc` + `engines` in `package.json` | Pin Node 22, so your computer, GitHub and Vercel build the same way |
+| `.nvmrc` + `engines` in `package.json` | Pin Node 22, so your computer, GitHub and Netlify build the same way |
 | `.gitattributes` | Keeps scripts working if someone clones on Windows |
 | `.gitignore` | Keeps keys, `node_modules` and build output out of the repo |
