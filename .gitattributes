@@ -1,0 +1,5 @@
+# Keep Unix line endings on scripts and SQL, so they still run when the
+# repo is cloned on Windows.
+* text=auto
+*.sh text eol=lf
+*.sql text eol=lf

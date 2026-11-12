@@ -1,0 +1,15 @@
+# Opens a pull request once a month when dependencies have updates,
+# so security fixes don't sit unnoticed. CI checks each one.
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: monthly
+    groups:
+      all:
+        patterns: ["*"]
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly

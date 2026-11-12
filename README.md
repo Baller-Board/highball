@@ -77,10 +77,8 @@ Open http://localhost:5173.
 
 ### 4. Deploy
 
-```bash
-git init && git add -A && git commit -m "Highball"
-gh repo create highball --private --source=. --push
-```
+First put the code on GitHub: **[docs/GITHUB_SETUP.md](docs/GITHUB_SETUP.md)** walks through it
+step by step. The project is already a git repository with its history, on branch `main`.
 
 Then at [vercel.com](https://vercel.com): **Add New → Project**, import the repo. Vercel detects
 Vite automatically. Before deploying, add the same two environment variables under
