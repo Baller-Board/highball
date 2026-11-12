@@ -497,3 +497,15 @@ left join lateral (
 -- Supabase's default grants don't reach a view recreated after the fact
 -- in every setup, so grant read access explicitly.
 grant select on board to anon, authenticated;
+
+-- ---------- explicit API access ----------
+-- Newer Supabase projects can be set to not expose new tables to the API
+-- automatically. These grants make the app work either way. Row-level
+-- security above still decides which rows anyone can touch, and the
+-- column limits on days and crews stay in place (no table-wide insert or
+-- update is granted on those).
+grant select on planters, days, crews, crew_staff, crew_members to anon, authenticated;
+grant select on site_admins to authenticated;
+grant insert, update, delete on planters to authenticated;
+grant delete on days, crews to authenticated;
+grant execute on function terrain_factor(text), is_site_admin(), is_crew_staff(uuid, boolean) to anon, authenticated;

@@ -17,8 +17,11 @@ Budget about an hour. Two accounts needed, both free to start: Supabase and Verc
 1. Sign up at [supabase.com](https://supabase.com) and create a project. Save the database
    password somewhere — you won't need it for this app, but you'll want it later.
 2. Open **SQL Editor → New query**.
-3. Run the three files in `supabase/migrations/` **in order**: paste each one's contents and hit
-   **Run**, then the next.
+3. **New project:** paste all of `supabase/setup_all.sql` and hit **Run**. That's everything in
+   one go. (It's the three files below, joined.)
+
+   **Or** run the three files in `supabase/migrations/` **in order**: paste each one's contents and
+   hit **Run**, then the next.
    - `0001_init.sql`: the `planters` and `days` tables, the `board` view that computes Gnar, and
      the row-level security policies that stop anyone editing a profile that isn't theirs.
    - `0002_hardening.sql`: tighter limits (text lengths, clean camp names, no dates before 1990).
@@ -62,7 +65,8 @@ VITE_SUPABASE_URL=https://yourproject.supabase.co
 VITE_SUPABASE_ANON_KEY=eyJhbGciOi...
 ```
 
-The anon key is meant to be public — it ships in the browser bundle. Row-level security is what
+Supabase labels the key either **Publishable key** (starts `sb_publishable_`) or, on older
+projects, **anon public**. Either works. The key is meant to be public — it ships in the browser bundle. Row-level security is what
 protects the data, not key secrecy. Never put the `service_role` key in this file.
 
 ```bash
